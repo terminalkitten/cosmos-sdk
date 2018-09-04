@@ -47,6 +47,7 @@ FEATURES
   * [lcd] Endpoints to query staking pool and params
   * [lcd] \#2110 Add support for `simulate=true` requests query argument to endpoints that send txs to run simulations of transactions
   * [lcd] \#966 Add support for `generate_only=true` query argument to generate offline unsigned transactions
+  * [lcd] \#1953 Add /sign endpoint to sign transactions generated with `generate_only=true`.
 
 * Gaia CLI  (`gaiacli`)
   * [cli] Cmds to query staking pool and params
@@ -57,6 +58,7 @@ FEATURES
   * [cli] \#2047 The --gas-adjustment flag can be used to adjust the estimate obtained via the simulation triggered by --gas=0.
   * [cli] \#2110 Add --dry-run flag to perform a simulation of a transaction without broadcasting it. The --gas flag is ignored as gas would be automatically estimated.
   * [cli] \#966 Add --generate-only flag to build an unsigned transaction and write it to STDOUT.
+  * [cli] \#1953 New `sign` command to sign transactions generated with the --generate-only flag.
 
 * Gaia
   * [cli] #2170 added ability to show the node's address via `gaiad tendermint show-address`

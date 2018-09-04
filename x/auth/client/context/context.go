@@ -117,24 +117,11 @@ func (ctx TxContext) Build(msgs []sdk.Msg) (auth.StdSignMsg, error) {
 // Sign signs a transaction given a name, passphrase, and a single message to
 // signed. An error is returned if signing fails.
 func (ctx TxContext) Sign(name, passphrase string, msg auth.StdSignMsg) ([]byte, error) {
-	keybase, err := keys.GetKeyBase()
+	sig, err := MakeSignature(name, passphrase, msg)
 	if err != nil {
 		return nil, err
 	}
-
-	sig, pubkey, err := keybase.Sign(name, passphrase, msg.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	sigs := []auth.StdSignature{{
-		AccountNumber: msg.AccountNumber,
-		Sequence:      msg.Sequence,
-		PubKey:        pubkey,
-		Signature:     sig,
-	}}
-
-	return ctx.Codec.MarshalBinary(auth.NewStdTx(msg.Msgs, msg.Fee, sigs, msg.Memo))
+	return ctx.Codec.MarshalBinary(auth.NewStdTx(msg.Msgs, msg.Fee, []auth.StdSignature{sig}, msg.Memo))
 }
 
 // BuildAndSign builds a single message to be signed, and signs a transaction
@@ -176,4 +163,34 @@ func (ctx TxContext) BuildWithPubKey(name string, msgs []sdk.Msg) ([]byte, error
 	}}
 
 	return ctx.Codec.MarshalBinary(auth.NewStdTx(msg.Msgs, msg.Fee, sigs, msg.Memo))
+}
+
+// MakeSignature builds a StdSignature given key name, passphrase, and a StdSignMsg.
+func MakeSignature(name, passphrase string, msg auth.StdSignMsg) (sig auth.StdSignature, err error) {
+	keybase, err := keys.GetKeyBase()
+	if err != nil {
+		return
+	}
+	sigBytes, pubkey, err := keybase.Sign(name, passphrase, msg.Bytes())
+	if err != nil {
+		return
+	}
+	return auth.StdSignature{
+		AccountNumber: msg.AccountNumber,
+		Sequence:      msg.Sequence,
+		PubKey:        pubkey,
+		Signature:     sigBytes,
+	}, nil
+}
+
+// SignStdTx attach a signature to a StdTx and returns a copy of a it. If overwriteSigs is true,
+// it replaces the signatures already attached if there's any with the given signature.
+func SignStdTx(stdTx auth.StdTx, stdSignature auth.StdSignature, overwriteSigs bool) auth.StdTx {
+	sigs := stdTx.GetSignatures()
+	if len(sigs) == 0 || overwriteSigs {
+		sigs = []auth.StdSignature{stdSignature}
+	} else {
+		sigs = append(sigs, stdSignature)
+	}
+	return auth.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, sigs, stdTx.GetMemo())
 }
